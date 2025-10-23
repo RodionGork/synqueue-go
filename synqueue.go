@@ -10,26 +10,26 @@ type elemwrap[E any] struct {
 	next *elemwrap[E]
 }
 
-type sinqueue[E any] struct {
+type synqueue[E any] struct {
 	head *elemwrap[E]
 	last *elemwrap[E]
 }
 
-func NewSinqueue[E any]() *sinqueue[E] {
-	return &sinqueue[E]{nil, nil}
+func NewSynqueue[E any]() *synqueue[E] {
+	return &synqueue[E]{nil, nil}
 }
 
-func (q *sinqueue[E]) Add(elem *E) {
+func (q *synqueue[E]) Add(elem *E) {
 	if q.last == nil {
 		q.last = &elemwrap[E]{elem, nil}
 		q.head = q.last
 	} else {
-		q.last.next = &elemwrap[E]{elem, q.head}
+		q.last.next = &elemwrap[E]{elem, nil}
 		q.last = q.last.next
 	}
 }
 
-func (q *sinqueue[E]) Take() *E {
+func (q *synqueue[E]) Take() *E {
 	if q.head == nil {
 		return nil
 	}
@@ -39,18 +39,4 @@ func (q *sinqueue[E]) Take() *E {
 		q.last = nil
 	}
 	return elem
-}
-
-type User struct {
-	Id int
-}
-
-func main() {
-	q := NewSinqueue[User]()
-	q.Add(&User{2})
-	println(q.Take().Id)
-	q.Add(&User{3})
-	q.Add(&User{5})
-	println(q.Take().Id)
-	println(q.Take().Id)
 }
