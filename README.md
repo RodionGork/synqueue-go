@@ -1,5 +1,7 @@
 # SynQueue for Go language
 
+**currently it is a work in progress, being transferred/cleaned from private project**
+
 Channels in Go languages are powerful but they always want us to specify buffer limit.
 
 This is not convenient and violates principle that applications should not impose some
