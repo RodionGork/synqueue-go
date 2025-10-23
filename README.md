@@ -14,3 +14,35 @@ and moreover one special case of size equal to 0 for unbuffered channel._
 There are various approaches to workaround the problem, here we'll try to implement
 thread-safe single-linked queue of elements. We'll start with basic implementation based
 on mutex and later probably enrich the solution with other approaches and utility methods.
+
+### Usage
+
+By now here is only one implementation, `synqueue`, using mutex internally.
+
+Create it like this, for certain type of contained elements, e.g. `User`:
+
+    type User struct {
+        Id int // example field
+        // ... some more fields
+    }
+
+    queue := NewSynqueue[User]()
+
+Then add elements to queue with `Send` method:
+
+    for id := 0; id < 1000; id++ {
+        queue.Send(&User{Id: id})
+    }
+
+Fetching elements from the queue is done with `Receive` method:
+
+    for {
+        user := queue.Receive()
+        if user == nil {        // queue is currently empty
+            time.Sleep(100 * time.Millisecond)
+            continue
+        }
+        fmt.Printf("user#%d\n", user.Id)
+    }
+
+No need to "close" the queue, just discard it when it is not needed.
