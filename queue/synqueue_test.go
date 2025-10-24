@@ -80,27 +80,28 @@ func TestSeveralElems(t *testing.T) {
 	}
 }
 
-var atomicCnt int64
-
 func fillQueue(q Queue[User], step, start, count int) {
 	id := start
-	defer func() {
-		println("atomicnt", atomicCnt)
-	}()
 	for i := 0; i < count; i++ {
 		q.Send(&User{id})
-		atomic.AddInt64(&atomicCnt, 1)
 		id += step
 	}
 }
 
-func TestManyInParallel(t *testing.T) {
+func dumpQueue(q Queue[User]) int {
+	cnt := 0
+	for q.Receive() != nil {
+		cnt++
+	}
+	return cnt
+}
+
+func TestSendInParallel(t *testing.T) {
 	q := NewSynqueue[User]()
 	wg := sync.WaitGroup{}
 	par := 5
 	num := 1000000
 	wg.Add(par)
-	atomic.StoreInt64(&atomicCnt, 0)
 	for i := 0; i < par; i++ {
 		go func() {
 			fillQueue(q, par, i, num)
@@ -108,11 +109,43 @@ func TestManyInParallel(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	cnt := 0
-	for elem := q.(*synqueue[User]).head; elem != nil; elem = elem.next {
-		cnt++
-	}
-	if cnt != num*par {
+	if cnt := dumpQueue(q); cnt != num*par {
 		t.Errorf("Incorrect elems count instead of %v: %v", num*par, cnt)
+	}
+}
+
+func TestReceiveInParallel(t *testing.T) {
+	q := NewSynqueue[User]()
+	num := 1000000
+	fillQueue(q, 1, 0, num)
+	wg := sync.WaitGroup{}
+	par := 3
+	wg.Add(par)
+	var total int64 = 0
+	for i := 0; i < par; i++ {
+		go func() {
+			n := dumpQueue(q)
+			t.Logf("dumped: %d", n)
+			atomic.AddInt64(&total, int64(n))
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	if int(total) != num {
+		t.Errorf("Wrong number of elements received: %d", total)
+	}
+}
+
+func TestChanWrap(t *testing.T) {
+	w := NewChanWrap(NewSynqueue[User]())
+	ids := []int{2, 3, 5, 7, 11}
+	for _, id := range ids {
+		w.Send(&User{id})
+	}
+	for _, id := range ids {
+		u := <-w.Chan()
+		if u.Id != id {
+			t.Errorf("Incorrect elem: id=%d instead of %d", u.Id, id)
+		}
 	}
 }

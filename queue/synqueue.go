@@ -1,11 +1,8 @@
 package queue
 
-import "sync"
-
-type Queue[E any] interface {
-	Send(elem *E)
-	Receive() *E
-}
+import (
+	"sync"
+)
 
 type elemwrap[E any] struct {
 	elem *E
